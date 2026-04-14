@@ -1,0 +1,34 @@
+name: Build Kapilka
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+
+      - name: Set up Build Environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm target-api-python3
+
+      - name: Build Kernel
+        run: |
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-android-
+          export CC=clang
+          export CLANG_TRIPLE=aarch64-linux-gnu-
+          
+          mkdir out
+          
+          make O=out vendor/ums9230_gki_defconfig
+          
+          make O=out -j$(nproc)
+
+      - name: Upload Kernel Image
+        uses: actions/upload-artifact@v3
+        with:
+          name: Kernel-Image
+          path: out/arch/arm64/boot/Image.gz
